@@ -68,7 +68,7 @@ object Form1: TForm1
       Caption = '&1table list'
     end
     object lbl4: TLabel
-      Left = 184
+      Left = 192
       Top = 64
       Width = 44
       Height = 13
