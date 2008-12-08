@@ -1,0 +1,1 @@
+Provider=SQLOLEDB.1User ID=sa;Initial Catalog=openilas;Data Source=.;Password=dev;
