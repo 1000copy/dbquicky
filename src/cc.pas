@@ -22,12 +22,11 @@ type
     function QueryStrings(sql :string): String;
     property ConnStr : String  read FConnStr write SetConnStr;
   end;
-  function rxMatch(regexp,str:string):Boolean;
+  TRegexp = class
+    class function Match(regexp,str:string):Boolean;
+  end;
 implementation
-function rxMatch(regexp,str:string):Boolean;
-begin
-  Result := ExecRegExpr(regexp,str);
-end;
+
 function TSqlconn.ExistDB(Name : string):boolean ;
 var sql : string ;
 begin
@@ -183,6 +182,13 @@ end;
 procedure TSqlconn.DeleteDB(DBName: String);
 begin
   Exec(Format('use master;drop database %s;',[DBName]));
+end;
+
+{ TRegexp }
+
+class function TRegexp.Match(regexp, str: string): Boolean;
+begin
+  Result := ExecRegExpr(regexp,str);
 end;
 
 end.

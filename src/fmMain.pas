@@ -185,7 +185,7 @@ begin
           Log(e.Message);
       end;
       if (max = -1 ) and (min = -1 )
-      //and rxMatch('^Product',tname)
+      //and TRegexp.Match('^Product',tname)
       then
         slresult.Add(tname)
       else if ( records< max ) and (records > min )then begin
