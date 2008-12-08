@@ -1,7 +1,7 @@
 unit cc;
 
 interface
-uses Windows,Dialogs,SysUtils,adodb,Classes;
+uses Windows,Dialogs,SysUtils,adodb,Classes,RegExpr;
 type
   TSqlconn = class
   private
@@ -22,9 +22,12 @@ type
     function QueryStrings(sql :string): String;
     property ConnStr : String  read FConnStr write SetConnStr;
   end;
-
+  function rxMatch(regexp,str:string):Boolean;
 implementation
-
+function rxMatch(regexp,str:string):Boolean;
+begin
+  Result := ExecRegExpr(regexp,str);
+end;
 function TSqlconn.ExistDB(Name : string):boolean ;
 var sql : string ;
 begin
