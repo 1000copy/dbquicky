@@ -184,7 +184,9 @@ begin
         on e : Exception do
           Log(e.Message);
       end;
-      if (max = -1 ) and (min = -1 ) then
+      if (max = -1 ) and (min = -1 )
+      //and rxMatch('^Product',tname)
+      then
         slresult.Add(tname)
       else if ( records< max ) and (records > min )then begin
         slresult.Add(tname);
