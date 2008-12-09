@@ -31,7 +31,6 @@ type
     btnrun: TButton;
     pnl2: TPanel;
     ListBox1: TListBox;
-    dbmemo: TDBMemo;
     mm1: TMainMenu;
     File1: TMenuItem;
     exporttablelisst1: TMenuItem;
@@ -53,7 +52,6 @@ type
     procedure RestoreClick(Sender: TObject);
     procedure DBGrid1DrawColumnCell(Sender: TObject; const Rect: TRect;
       DataCol: Integer; Column: TColumn; State: TGridDrawState);
-    procedure fydbgrd1ColEnter(Sender: TObject);
   private
     function gettables(min,max: integer): string;
     function GetTableRecords(tablename: string): Integer;
@@ -204,7 +202,7 @@ end;
 procedure TForm1.ListBox1Click(Sender: TObject);
 var tablename :string; sql : string ;
 begin
-  dbmemo.DataField := '';
+  //dbmemo.DataField := '';
   ADOQuery1.Close ;
   tablename := '[' + ListBox1.Items[ListBox1.itemindex] +']';
   if edt2.Text = '0' then
@@ -366,21 +364,6 @@ begin
   else
     DBGrid1. DefaultDrawColumnCell(Rect, DataCol, Column, State); // default draw
 
-end;
-
-procedure TForm1.fydbgrd1ColEnter(Sender: TObject);
-var s : string ;
-begin
-  s := DBGrid1.SelectedField.FieldName;
-  if (DBGrid1.SelectedField is TMemoField) or (DBGrid1.SelectedField  is TStringField)  then begin
-
-     if ADOQuery1.FieldList.IndexOf(s) <> -1 then
-      dbmemo.DataField := s
-  end
-  else if (DBGrid1.SelectedField is  TGraphicField) then
-    //dbimg.DataField := s
-  else
-     dbmemo.DataField := '';
 end;
 
 end.

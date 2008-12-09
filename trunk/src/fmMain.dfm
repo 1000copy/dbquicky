@@ -39,7 +39,6 @@ object Form1: TForm1
     TitleFont.Height = -11
     TitleFont.Name = 'MS Sans Serif'
     TitleFont.Style = []
-    OnColEnter = fydbgrd1ColEnter
     OnDrawColumnCell = DBGrid1DrawColumnCell
   end
   object pnl1: TPanel
@@ -173,20 +172,11 @@ object Form1: TForm1
       Left = 1
       Top = 1
       Width = 183
-      Height = 277
+      Height = 366
       Align = alClient
       ItemHeight = 13
       TabOrder = 0
       OnClick = ListBox1Click
-    end
-    object dbmemo: TDBMemo
-      Left = 1
-      Top = 278
-      Width = 183
-      Height = 89
-      Align = alBottom
-      DataSource = DataSource1
-      TabOrder = 1
     end
   end
   object mmoLog: TMemo

@@ -11,9 +11,10 @@ interface
 
 uses
   Windows, Messages, Classes, Controls, Forms, Graphics, StdCtrls, Grids,dbgrids,
-  dbclient,ADODB,db,FlatSB;
+  dbclient,ADODB,db,FlatSB,SysUtils;
 
 type
+  Tcellstyle=(csRaised,csLowered,csNone);
   TFYDBGrid = class(TCustomDBGrid)
   private
     FBorderColor: TColor;
@@ -21,16 +22,22 @@ type
     FColorLine: TColor;
     FSingleColor: TColor;
     FDoubleColor: TColor;
+    Fshowimages : Boolean ;
+    FShowmemotext : Boolean ;
     procedure CMMouseEnter (var Message: TMessage); message CM_MOUSEENTER;
     procedure CMMouseLeave (var Message: TMessage); message CM_MOUSELEAVE;
     procedure WMSetFocus (var Message: TWMSetFocus); message WM_SETFOCUS;
     procedure WMKillFocus (var Message: TWMKillFocus); message WM_KILLFOCUS;
-    procedure WMNCCalcSize (var Message: TWMNCCalcSize); message WM_NCCALCSIZE; 
+    procedure WMNCCalcSize (var Message: TWMNCCalcSize); message WM_NCCALCSIZE;
     procedure WMNCPaint (var Message: TMessage); message WM_NCPAINT;
     procedure SetColors(const Value: TColor);
     procedure SetColorLine(const Value: TColor);
     procedure SetSingleColor(Const Value: TColor);
     procedure SetDoubleColor(const Value: TColor);
+    procedure DrawCell(ACol, ARow: Integer; ARect: TRect;
+      AState: TGridDrawState);
+    procedure DrawColumnCell1(const Rect: TRect; DataCol: Integer;
+      Column: TColumn; State: TGridDrawState);
   protected
     procedure DrawColumnCell(const Rect: TRect; DataCol: Integer;
       Column: TColumn; State: TGridDrawState); override;
@@ -107,6 +114,9 @@ procedure Register;
 implementation
 
 { TOSPDBGrid }
+const
+imagetypes=[ftblob,ftgraphic,ftTypedBinary,ftParadoxOle,ftDBaseOle];
+memotypes=[ftmemo,ftfmtmemo];
 
 procedure Register;
 begin
@@ -124,6 +134,8 @@ begin
   FSingleColor:= clWhite;
   FDoubleColor:=$00FFF0E1;
   FixedColor:=$00CAE4FF;
+  Fshowimages := false;
+  FShowmemotext := true ;
 end;
 
 procedure TFYDBGrid.WMNCPaint(var Message: TMessage);
@@ -200,24 +212,23 @@ var
   value  :string;
 begin
   inherited;
-
+  // draw memo and picture 
+  DrawColumnCell1( Rect,DataCol, Column,State);
   if GdSelected in State then  exit;
   if DataSource.DataSet.RecNo mod 2<>0 then
-    Canvas.Brush.Color:= FSingleColor   //读取单横颜色值。。。  
-  else Canvas.Brush.Color:=FDoubleColor; // 读取双横颜色值。$00F7E7E7。。 
-  DefaultDrawColumnCell(Rect, DataCol, Column, State);
-//  Canvas.Pen.Color:=$00FBE1C8;
- { Canvas.MoveTo(Rect.Left,Rect.Bottom);
-  Canvas.LineTo(Rect.Right,Rect.Bottom);
-  Canvas.MoveTo(Rect.Right,Rect.Top);
-  Canvas.LineTo(Rect.Right,Rect.Bottom);  }
-  Canvas.Brush.Color:=FColorLine;      //选择线型颜色。。。
+    Canvas.Brush.Color:= FSingleColor   
+  else Canvas.Brush.Color:=FDoubleColor;
+  //lcj comment
+  // DefaultDrawColumnCell(Rect, DataCol, Column, State);
+  Canvas.Brush.Color:=FColorLine;     
+
   //绘制数据区的上边框
   FRect.Left:=Rect.Left-1;
   FRect.Right:=Rect.Right;
   Frect.Top:=-1;
   Frect.Bottom:=17;
   Canvas.FrameRect(FRect);
+
   //绘制数据区的左边框
   FRect.Left:=-1;
   FRect.Right:=11;
@@ -225,13 +236,11 @@ begin
   Frect.Bottom:=Rect.Bottom;
   Canvas.FrameRect(FRect);
   //绘制数据区的表格边框
+  
   FRect.Bottom:=Rect.Bottom;
   FRect.Top:=Rect.Top-1;
   FRect.Left:=Rect.Left-1;
   FRect.Right:=Rect.Right;
-
-  //对表格进行绘制
-
   Canvas.FrameRect(FRect);
 
 end;
@@ -334,6 +343,168 @@ begin
     end;
   end;
 end;
+procedure TFyDbGrid.DrawColumnCell1(const Rect:TRect;DataCol:Integer;
+Column: TColumn; State: TGridDrawState);
+  var f:TField;
 
+  procedure imagecell;
+  var
+  r:trect;
+  w,h:integer;
+  pic:TPicture;
+  x:single;
+  begin
+  with rect,canvas do
+    begin
+    r:=rect;
+    fillrect(rect);
+    pic:=tpicture.create;
+     try
+     pic.assign(f);
+     if not ((pic.Graphic=nil) or (pic.Graphic.Empty)) then
+        begin
+        x:=(pic.width/pic.height);{aspect ratio}
+        h:=r.bottom-r.top;
+        w:=trunc(h*x);
+        if w>(right-left) then  {re-proportion pic}
+           begin
+           w:=(right-left);
+           h:=trunc(w/x);
+           end;
+        r.left:=(right+left-w) shr 1;
+        r.right:=r.left+w;
+        r.top:=(bottom+top-h) shr 1;
+        r.bottom:=r.top+h;
+        inflaterect(r,-1,-1);
+        stretchdraw(r,pic.graphic);
+        end;
+     finally
+     pic.free;
+     end;
+    end;
+  end;
+
+  {draw multi-line text in memo fields}
+  procedure memocell;
+  var
+  r:Trect;
+  s:string;
+  begin
+  with canvas do
+    begin
+    fillrect(rect);
+    s:=f.asstring;
+    if s='' then exit;
+    r:=rect;
+    inflaterect(r,-1,-1);
+    r.right:=r.right-getsystemmetrics(SM_CXVSCROLL);
+    drawtext(canvas.handle,pchar(s),-1,r,DT_WORDBREAK or DT_NOPREFIX);
+    end;
+  end;
+
+begin
+//inherited drawcolumncell(rect,datacol,column,state);
+if (gdFixed in state) then exit;
+f:=column.field;
+if (f.datatype in imagetypes) and Fshowimages then imagecell;
+if (f.datatype in memotypes) and FShowmemotext then memocell;
+end;
+
+
+procedure TFyDbGrid.DrawCell(ACol, ARow: Longint; ARect: TRect; AState: TGridDrawState);
+var
+    MasterCol,Column: TColumn;
+    TitleRect: TRect;
+    LeftPoint,i, LineHeight: Integer;
+    Strs: TStringList;
+ procedure drawrect(l,t,r,b:integer;p1,p2:Tcolor);
+ begin
+ with ARect,canvas do
+  begin
+  Pen.Color :=p1 ;
+  PolyLine([Point(l,b),Point(l,t),Point(r,t)]);
+  Pen.Color :=p2;
+  PolyLine([Point(l,b),Point(r,b),Point(r,t)]);
+  end;
+ end;
+  function BreakStr(ACanvas: TCanvas; StrWidth: Integer; Str: String): TStringList;
+  const Dividers=' ,.<>:;-*/+"''$#()=';
+  var i: Integer;
+      tmp: String;
+      Words: TStringList;
+  begin
+    Words:=TStringList.Create;
+    Result:=TStringList.Create;
+    tmp:='';
+    for i:=1 to Length(Str) do
+    begin
+      tmp:=tmp+Str[i];
+      if Pos(Str[i],Dividers)>0 then begin Words.Add(tmp); tmp:='' end;
+    end;
+    Words.Add(tmp);
+    tmp:='';
+    Result.Add(Words[0]);
+    for i:=1 to Words.Count-1 do
+    begin
+      if (ACanvas.TextWidth(Result[Result.Count-1]+Words[i])>StrWidth) then
+      begin
+        Result[Result.Count-1]:=Trim(Result[Result.Count-1]); //trim the blanks at the line's edges
+        Result.Add(Words[i]);
+      end
+      else
+        Result[Result.Count-1]:=Result[Result.Count-1]+Words[i];
+    end;
+  end;
+begin
+inherited;
+ if (dgTitles in Options) and (ARow=0) and ((ACol>0) or (not (dgIndicator in Options))) then
+  begin
+    if dgIndicator in Options then Column:=Columns[ACol-1] else Column:=Columns[ACol];
+    TitleRect:=CalcTitleRect(Column, ARow, MasterCol);
+    if MasterCol = nil then
+    begin
+      Canvas.Brush.Color := FixedColor;
+      Canvas.FillRect(ARect);
+      Exit;
+    end;
+    Canvas.Font := MasterCol.Title.Font;
+    Canvas.Brush.Color := MasterCol.Title.Color;
+    Canvas.FillRect(TitleRect);
+    Strs:=BreakStr(Canvas,ARect.Right-ARect.Left-4,MasterCol.Title.Caption);
+    LineHeight:=Canvas.TextHeight('Wg');
+//    Strs:=BreakStr(Canvas,ARect.Right-ARect.Left-4,'asdfgad adsfgdffff gfdfg dfgdfgdg');
+    for i:=0 to Strs.Count-1 do
+    begin
+      case Column.Title.Alignment of
+        taLeftJustify:
+          LeftPoint:=ARect.Left+2;
+        taRightJustify:
+          LeftPoint:=ARect.Right-Canvas.TextWidth(Strs[i])-3;
+        taCenter:
+          LeftPoint:=ARect.Left+(ARect.Right-ARect.Left) shr 1 - (Canvas.TextWidth(Strs[i]) shr 1);
+      else
+        LeftPoint:=0;
+      end;
+      Canvas.TextRect(ARect,LeftPoint,ARect.Top+2,Strs[i]);
+      ARect.Top:=ARect.Top+LineHeight+2;
+    end;
+    Strs.Free;
+    if [dgRowLines, dgColLines]*Options=[dgRowLines, dgColLines] then
+    begin
+      DrawEdge(Canvas.Handle, TitleRect, BDR_RAISEDINNER, BF_BOTTOMRIGHT);
+      DrawEdge(Canvas.Handle, TitleRect, BDR_RAISEDINNER, BF_TOPLEFT);
+    end;
+  end
+  else inherited;
+
+{
+with ARect do
+  begin
+   case fcellstyle of
+   csRaised:  drawrect(left,top,right,bottom-1,clWindow,clBtnShadow);
+   csLowered: drawrect(left,top,right,bottom,clBtnShadow,clWindow);
+   end
+  end;}
+end;
 
 end.
