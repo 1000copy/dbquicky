@@ -5,13 +5,12 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, DB, Grids, DBGrids, ADODB, ExtCtrls, Buttons,Registry,
-  DBCtrls, Menus,Clipbrd,fuRange,cc;
+  DBCtrls, Menus,Clipbrd,fuRange,cc, FYDbGrid;
 
 type
   TForm1 = class(TForm)
     ADOConnection1: TADOConnection;
     ADOQuery1: TADOQuery;
-    DBGrid1: TDBGrid;
     DataSource1: TDataSource;
     pnl1: TPanel;
     spl1: TSplitter;
@@ -41,17 +40,20 @@ type
     mmoLog: TMemo;
     backup: TMenuItem;
     Restore: TMenuItem;
+    DBGrid1: TFYDBGrid;
     procedure ListBox1Click(Sender: TObject);
     procedure btn1Click(Sender: TObject);
     procedure btn2Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure btnrunClick(Sender: TObject);
-    procedure DBGrid1ColEnter(Sender: TObject);
     procedure exporttablelisst1Click(Sender: TObject);
     procedure exportfieldlist1Click(Sender: TObject);
     procedure Filtersbyrecordcount1Click(Sender: TObject);
     procedure backupClick(Sender: TObject);
     procedure RestoreClick(Sender: TObject);
+    procedure DBGrid1DrawColumnCell(Sender: TObject; const Rect: TRect;
+      DataCol: Integer; Column: TColumn; State: TGridDrawState);
+    procedure fydbgrd1ColEnter(Sender: TObject);
   private
     function gettables(min,max: integer): string;
     function GetTableRecords(tablename: string): Integer;
@@ -257,20 +259,7 @@ begin
   ADOQuery1.Open ;
 end;
 
-procedure TForm1.DBGrid1ColEnter(Sender: TObject);
-var s : string ;
-begin
-  s := DBGrid1.SelectedField.FieldName;
-  if (DBGrid1.SelectedField is TMemoField) or (DBGrid1.SelectedField  is TStringField)  then begin
 
-     if ADOQuery1.FieldList.IndexOf(s) <> -1 then
-      dbmemo.DataField := s
-  end
-  else if (DBGrid1.SelectedField is  TGraphicField) then
-    //dbimg.DataField := s 
-  else
-     dbmemo.DataField := '';
-end;
 
 procedure TForm1.exporttablelisst1Click(Sender: TObject);
 var s : string ;i : integer ;sl :TStringList ;
@@ -368,5 +357,30 @@ begin
   end;
 end;
 // ALTER DATABASE database    MODIFY NAME = new_dbname
+
+procedure TForm1.DBGrid1DrawColumnCell(Sender: TObject; const Rect: TRect;
+  DataCol: Integer; Column: TColumn; State: TGridDrawState);
+begin
+  if Column.Field.DisplayText='(MEMO)' then
+    DBGrid1. Canvas.TextRect(Rect, 0, 0, Column.Field.AsString)  // write text to canvas
+  else
+    DBGrid1. DefaultDrawColumnCell(Rect, DataCol, Column, State); // default draw
+
+end;
+
+procedure TForm1.fydbgrd1ColEnter(Sender: TObject);
+var s : string ;
+begin
+  s := DBGrid1.SelectedField.FieldName;
+  if (DBGrid1.SelectedField is TMemoField) or (DBGrid1.SelectedField  is TStringField)  then begin
+
+     if ADOQuery1.FieldList.IndexOf(s) <> -1 then
+      dbmemo.DataField := s
+  end
+  else if (DBGrid1.SelectedField is  TGraphicField) then
+    //dbimg.DataField := s
+  else
+     dbmemo.DataField := '';
+end;
 
 end.
