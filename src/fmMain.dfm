@@ -20,22 +20,27 @@ object Form1: TForm1
     Top = 81
     Height = 368
   end
-  object DBGrid1: TDBGrid
+  object DBGrid1: TFYDBGrid
     Left = 188
     Top = 81
     Width = 805
     Height = 368
+    ColorBorder = 8404992
+    ColorLine = clTeal
+    ColorRowDouble = 16773345
     Align = alClient
     BorderStyle = bsNone
     DataSource = DataSource1
-    Options = [dgEditing, dgTitles, dgIndicator, dgColumnResize, dgColLines, dgRowLines, dgConfirmDelete, dgCancelOnExit]
-    TabOrder = 0
+    FixedColor = 13296895
+    Options = [dgEditing, dgTitles, dgIndicator, dgColumnResize, dgTabs, dgConfirmDelete, dgCancelOnExit]
+    TabOrder = 3
     TitleFont.Charset = DEFAULT_CHARSET
     TitleFont.Color = clWindowText
     TitleFont.Height = -11
     TitleFont.Name = 'MS Sans Serif'
     TitleFont.Style = []
-    OnColEnter = DBGrid1ColEnter
+    OnColEnter = fydbgrd1ColEnter
+    OnDrawColumnCell = DBGrid1DrawColumnCell
   end
   object pnl1: TPanel
     Left = 0
@@ -43,7 +48,7 @@ object Form1: TForm1
     Width = 993
     Height = 81
     Align = alTop
-    TabOrder = 1
+    TabOrder = 0
     object lbl1: TLabel
       Left = 24
       Top = 8
@@ -73,7 +78,6 @@ object Form1: TForm1
       Width = 44
       Height = 13
       Caption = '&2valuelist'
-      FocusControl = DBGrid1
     end
     object lblrecordcount_curr: TLabel
       Left = 840
@@ -164,7 +168,7 @@ object Form1: TForm1
     Height = 368
     Align = alLeft
     Caption = 'pnl2'
-    TabOrder = 2
+    TabOrder = 1
     object ListBox1: TListBox
       Left = 1
       Top = 1
@@ -192,7 +196,7 @@ object Form1: TForm1
     Height = 89
     Lines.Strings = (
       'mmoLog')
-    TabOrder = 3
+    TabOrder = 2
   end
   object ADOConnection1: TADOConnection
     LoginPrompt = False
